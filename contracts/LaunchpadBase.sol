@@ -96,6 +96,13 @@ contract LaunchpadBase is LaunchpadConstants, OwnableUpgradeable {
         }
     }
 
+    function updateGuaranteedSupply(uint256 _newMaxSupply) external onlyOwner {
+        require(guaranteedSale.active, "Guaranteed not active");
+        require(!_isEnd(guaranteedSale), "Guaranteed ended");
+        require(_newMaxSupply >= guaranteedSale.sold, "new supply not below sold amount");
+        guaranteedSale.maxSupply = _newMaxSupply;
+    }
+
     function _consumeRandomness(uint256 randomness) internal returns (bool){
         uint256 nftBalanceOfVault = collection.balanceOf(nftVault);
         require(nftBalanceOfVault > 0, "Vault dont have any NFT");
@@ -197,12 +204,12 @@ contract LaunchpadBase is LaunchpadConstants, OwnableUpgradeable {
         require(saleInfo.sold + quantity <= saleInfo.maxSupply + offset, "The purchase limit has been reached");
     }
 
-    function _buyNFTWhitelist(uint256 buyType, uint256 quantity, uint256 paymentAmount, uint256[] memory index, uint256 requestId) internal {
+    function _buyNFTWhitelist(uint256 buyType, uint256 quantity, uint256 maxQuantity, uint256 paymentAmount, uint256[] memory index, uint256 requestId) internal {
         uint256 offset = _isEnd(guaranteedSale) ? guaranteedSale.maxSupply - guaranteedSale.sold : 0;
 
         _buyNFTValidate(privateSale, quantity, offset);
         Purchase storage purchased = itemSoldMapping[_msgSender()];
-        require(purchased.whitelist + quantity <= privateSale.maxAllocationPerUser, "The individual purchase limit has been reached.");
+        require(purchased.whitelist + quantity <= maxQuantity, "The individual purchase limit has been reached.");
 
         privateSale.sold += quantity;
         purchased.whitelist += quantity;
@@ -210,10 +217,10 @@ contract LaunchpadBase is LaunchpadConstants, OwnableUpgradeable {
         _buyNFT(buyType, quantity, paymentAmount, index, requestId);
     }
 
-    function _buyNFTGuaranteed(uint256 buyType, uint256 quantity, uint256 paymentAmount, uint256[] memory index, uint256 requestId) internal {
+    function _buyNFTGuaranteed(uint256 buyType, uint256 quantity, uint256 maxQuantity, uint256 paymentAmount, uint256[] memory index, uint256 requestId) internal {
         _buyNFTValidate(guaranteedSale, quantity, 0);
         Purchase storage purchased = itemSoldMapping[_msgSender()];
-        require(purchased.guaranteed + quantity <= guaranteedSale.maxAllocationPerUser, "The individual purchase limit has been reached.");
+        require(purchased.guaranteed + quantity <= maxQuantity, "The individual purchase limit has been reached.");
 
         guaranteedSale.sold += quantity;
         purchased.guaranteed += quantity;
@@ -234,9 +241,12 @@ contract LaunchpadBase is LaunchpadConstants, OwnableUpgradeable {
     }
 
     function _getNFTRemaining() internal view returns (uint256) {
-        (uint256 maxSupplyG, uint256 soldG) = _getPurchaseInfo(guaranteedSale);
-        (uint256 maxSupplyW, uint256 soldW) = _getPurchaseInfo(privateSale);
-        return (maxSupplyG + maxSupplyW) - (soldG + soldW);
+        if ((_isEnd(privateSale) || !privateSale.active) && (_isEnd(guaranteedSale) || !guaranteedSale.active)) {
+            (uint256 maxSupplyG, uint256 soldG) = _getPurchaseInfo(guaranteedSale);
+            (uint256 maxSupplyW, uint256 soldW) = _getPurchaseInfo(privateSale);
+            return (maxSupplyG + maxSupplyW) - (soldG + soldW);
+        }
+        return 0;
     }
 
     function _getPurchaseInfo(SaleInfo memory saleInfo) private view returns (uint256 maxSupply, uint256 sold) {

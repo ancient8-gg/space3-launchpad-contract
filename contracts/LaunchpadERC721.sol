@@ -55,48 +55,48 @@ contract LaunchpadERC721 is LaunchpadBase {
         IOriginERC721(collection).setBaseURI(baseURI);
     }
 
-    function buyNFTWhitelistERC20(uint256 quantity, bytes memory signature, uint256[] memory index, uint256 requestId, uint256 expiredTime) external {
+    function buyNFTWhitelistERC20(uint256 quantity, uint256 maxQuantity, bytes memory signature, uint256[] memory index, uint256 requestId, uint256 expiredTime) external {
         require(!isNativePayment(), "payment method not support");
         uint256 paymentAmount = quantity * privateSale.price;
         paymentToken.transferFrom(msg.sender, address(this), paymentAmount);
         bytes32 msgHash = keccak256(
-            abi.encodePacked(_msgSender(), TYPE_FUNC_BUY_NFT_WL_ERC20, quantity, index, requestId, expiredTime)
+            abi.encodePacked(_msgSender(), TYPE_FUNC_BUY_NFT_WL_ERC20, quantity, maxQuantity, index, requestId, expiredTime)
         );
         require(factory.validSignature(TYPE_FUNC_BUY_NFT_WL_ERC20, msgHash, signature, requestId, expiredTime), "Signature invalid");
-        _buyNFTWhitelist(TOKEN_ERC20, quantity, paymentAmount, index, requestId);
+        _buyNFTWhitelist(TOKEN_ERC20, quantity, maxQuantity, paymentAmount, index, requestId);
     }
 
-    function buyNFTWhitelistETH(uint256 quantity, bytes memory signature, uint256[] memory index, uint256 requestId, uint256 expiredTime) external payable {
+    function buyNFTWhitelistETH(uint256 quantity, uint256 maxQuantity, bytes memory signature, uint256[] memory index, uint256 requestId, uint256 expiredTime) external payable {
         require(isNativePayment(), "payment method not support");
         uint256 paymentAmount = quantity * privateSale.price;
         require(msg.value >= paymentAmount, "value not enough");
         bytes32 msgHash = keccak256(
-            abi.encodePacked(_msgSender(), TYPE_FUNC_BUY_NFT_WL_NATIVE, quantity, index, requestId, expiredTime)
+            abi.encodePacked(_msgSender(), TYPE_FUNC_BUY_NFT_WL_NATIVE, quantity, maxQuantity, index, requestId, expiredTime)
         );
         require(factory.validSignature(TYPE_FUNC_BUY_NFT_WL_NATIVE, msgHash, signature, requestId, expiredTime), "Signature invalid");
-        _buyNFTWhitelist(TOKEN_NATIVE, quantity, paymentAmount, index, requestId);
+        _buyNFTWhitelist(TOKEN_NATIVE, quantity, maxQuantity, paymentAmount, index, requestId);
     }
 
-    function buyNFTGuaranteedERC20(uint256 quantity, bytes memory signature, uint256[] memory index, uint256 requestId, uint256 expiredTime) external {
+    function buyNFTGuaranteedERC20(uint256 quantity, uint256 maxQuantity, bytes memory signature, uint256[] memory index, uint256 requestId, uint256 expiredTime) external {
         require(!isNativePayment(), "payment method not support");
         uint256 paymentAmount = quantity * guaranteedSale.price;
         paymentToken.transferFrom(msg.sender, address(this), paymentAmount);
         bytes32 msgHash = keccak256(
-            abi.encodePacked(_msgSender(), TYPE_FUNC_BUY_NFT_GT_ERC20, quantity, index, requestId, expiredTime)
+            abi.encodePacked(_msgSender(), TYPE_FUNC_BUY_NFT_GT_ERC20, quantity, maxQuantity, index, requestId, expiredTime)
         );
         require(factory.validSignature(TYPE_FUNC_BUY_NFT_GT_ERC20, msgHash, signature, requestId, expiredTime), "Signature invalid");
-        _buyNFTGuaranteed(TOKEN_ERC20, quantity, paymentAmount, index, requestId);
+        _buyNFTGuaranteed(TOKEN_ERC20, quantity, maxQuantity, paymentAmount, index, requestId);
     }
 
-    function buyNFTGuaranteedETH(uint256 quantity, bytes memory signature, uint256[] memory index, uint256 requestId, uint256 expiredTime) external payable {
+    function buyNFTGuaranteedETH(uint256 quantity, uint256 maxQuantity, bytes memory signature, uint256[] memory index, uint256 requestId, uint256 expiredTime) external payable {
         require(isNativePayment(), "payment method not support");
         uint256 paymentAmount = quantity * guaranteedSale.price;
         require(msg.value >= paymentAmount, "value not enough");
         bytes32 msgHash = keccak256(
-            abi.encodePacked(_msgSender(), TYPE_FUNC_BUY_NFT_GT_NATIVE, quantity, index, requestId, expiredTime)
+            abi.encodePacked(_msgSender(), TYPE_FUNC_BUY_NFT_GT_NATIVE, quantity, maxQuantity, index, requestId, expiredTime)
         );
         require(factory.validSignature(TYPE_FUNC_BUY_NFT_GT_NATIVE, msgHash, signature, requestId, expiredTime), "Signature invalid");
-        _buyNFTGuaranteed(TOKEN_NATIVE, quantity, paymentAmount, index, requestId);
+        _buyNFTGuaranteed(TOKEN_NATIVE, quantity, maxQuantity, paymentAmount, index, requestId);
     }
 
     function buyNFTPublicERC20(uint256 quantity, bytes memory signature, uint256[] memory index, uint256 requestId, uint256 expiredTime) external {
@@ -144,7 +144,7 @@ contract LaunchpadERC721 is LaunchpadBase {
             abi.encodePacked(_msgSender(), TYPE_FUNC_BUY_TICKET_NATIVE, quantity, requestId, expiredTime)
         );
         require(factory.validSignature(TYPE_FUNC_BUY_TICKET_NATIVE, msgHash, signature, requestId, expiredTime), "Signature invalid");
-        _buyTicket(TOKEN_ERC20, paymentAmount, quantity, requestId);
+        _buyTicket(TOKEN_NATIVE, paymentAmount, quantity, requestId);
     }
 
     function refund(uint256 amount, bytes memory signature, uint256 requestId, uint256 expiredTime) external {
