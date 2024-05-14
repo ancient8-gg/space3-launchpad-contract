@@ -3,8 +3,6 @@ pragma solidity ^0.8.0;
 
 contract LaunchpadConstants {
 
-    uint256 public constant FULL_PERCENTAGE = 10000;
-
     uint256 public constant TOKEN_ERC20 = 2001;
     uint256 public constant TOKEN_NATIVE = 2002;
     uint256 public constant CLAIM_NFT = 2003;

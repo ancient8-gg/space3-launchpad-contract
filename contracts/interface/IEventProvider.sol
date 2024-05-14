@@ -29,4 +29,8 @@ interface IEventProvider is IAccessControlUpgradeable {
 
     function submitErrorConsume(address launchpad, bytes memory reason) external;
 
+    function submitErrorRevert(address launchpad, string memory reason) external;
+
+    function submitRandomnessRequest() external;
+
 }

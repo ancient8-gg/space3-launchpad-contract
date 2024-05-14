@@ -6,10 +6,8 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract OriginERC721 is Context, AccessControlEnumerable, ERC721Enumerable, ERC721Burnable {
-    using SafeMath for uint256;
 
     using Counters for Counters.Counter;
 
@@ -69,8 +67,7 @@ contract OriginERC721 is Context, AccessControlEnumerable, ERC721Enumerable, ERC
                 ? string(
                 abi.encodePacked(
                     currentBaseUri,
-                    Strings.toString(tokenId),
-                    ".json"
+                    Strings.toString(tokenId)
                 )
             ) : "";
     }

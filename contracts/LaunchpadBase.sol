@@ -90,6 +90,7 @@ contract LaunchpadBase is LaunchpadConstants, OwnableUpgradeable {
     }
 
     function setMinterType(uint256 _mintType) public onlyOwner {
+        require(_mintType == MINT_TYPE_BATCH || mintType == MINT_TYPE_MULTI, "MintType Invalid");
         mintType = _mintType;
         if (_mintType == MINT_TYPE_MULTI) {
             nftVault = address(0);
@@ -267,7 +268,7 @@ contract LaunchpadBase is LaunchpadConstants, OwnableUpgradeable {
         }
 
         // buy nft with nft vault
-        for (uint256 i = 0; i < index.length; i++) {
+        for (uint256 i = 0; i < quantity; i++) {
             requestIdIndexMapping[requestId][index[i]] = true;
             paymentQueueMapping[_msgSender()].queue.push(PaymentQueue(buyType, _msgSender(), paymentAmount, index[i], requestId));
             userQueueList.push(_msgSender());

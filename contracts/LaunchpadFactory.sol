@@ -4,18 +4,15 @@ pragma solidity ^0.8.15;
 import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import '@orochi-network/contracts/IOrandConsumerV2.sol';
-import '@orochi-network/contracts/IOrocleAggregatorV1.sol';
 import "./OriginERC721.sol";
 import "./interface/ILaunchpadERC721.sol";
 import "./interface/IEventProvider.sol";
 import "./interface/IConfig.sol";
 
-contract LaunchpadFactory is IOrandConsumerV2, AccessControlEnumerableUpgradeable {
+contract LaunchpadFactory is AccessControlEnumerableUpgradeable {
     using Clones for address;
 
     bytes32 public constant CREATE_LAUNCHPAD = keccak256("CREATE_LAUNCHPAD");
-    uint256 public constant FULL_PERCENT = 10000;
 
     uint256 internal constant TYPE_FUNC_BUY_NFT_WL_ERC20 = 1;
     uint256 internal constant TYPE_FUNC_BUY_NFT_PL_ERC20 = 11;
@@ -41,9 +38,7 @@ contract LaunchpadFactory is IOrandConsumerV2, AccessControlEnumerableUpgradeabl
     mapping(address => bool) public launchpadMapping;
 
     modifier onlyOrandProvider() {
-        if (_msgSender() != config.orochiProvider() && _msgSender() != config.orochiProvider2()) {
-            revert InvalidProvider();
-        }
+        require(_msgSender() == config.orochiProvider() || _msgSender() == config.orochiProvider2(), "Provider Invalid");
         _;
     }
 
@@ -126,6 +121,8 @@ contract LaunchpadFactory is IOrandConsumerV2, AccessControlEnumerableUpgradeabl
         nft.setBaseURI(_baseURI);
         nft.grantRole(nft.DEFAULT_ADMIN_ROLE(), launchpadAddress);
         nft.grantRole(nft.MINTER_ROLE(), launchpadAddress);
+        nft.revokeRole(nft.MINTER_ROLE(), address(this));
+        nft.revokeRole(nft.DEFAULT_ADMIN_ROLE(), address(this));
 
         return nftAddress;
     }
@@ -152,6 +149,10 @@ contract LaunchpadFactory is IOrandConsumerV2, AccessControlEnumerableUpgradeabl
 
     function getConfig() external view returns (address){
         return address(config);
+    }
+
+    function getQueueLength() external view returns (uint256){
+        return launchpadQueue.length;
     }
 
     function queryRequestId(uint256 typeFunc, uint256[] memory requestIds) external view returns (bool[] memory){
@@ -239,7 +240,7 @@ contract LaunchpadFactory is IOrandConsumerV2, AccessControlEnumerableUpgradeabl
     }
 
     function _requestOrochi() private {
-        IOrocleAggregatorV1(config.orochiAggregator()).request(0, '0x');
+        _getEventProvider().submitRandomnessRequest();
     }
 
     function _consumeRandomness(uint256 randomness) private returns (bool){
@@ -247,7 +248,10 @@ contract LaunchpadFactory is IOrandConsumerV2, AccessControlEnumerableUpgradeabl
         bool result;
         try ILaunchpadERC721(launchpadQueue[currentQueue]).consumeRandomness(randomness) returns (bool success){
             result = success;
-        }catch(bytes memory reason){
+        } catch Error(string memory reason) {
+            _getEventProvider().submitErrorRevert(address(this), reason);
+            result = false;
+        } catch(bytes memory reason){
             _getEventProvider().submitErrorConsume(address(this), reason);
             result = false;
         }
