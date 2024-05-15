@@ -90,7 +90,7 @@ contract LaunchpadBase is LaunchpadConstants, OwnableUpgradeable {
     }
 
     function setMinterType(uint256 _mintType) public onlyOwner {
-        require(_mintType == MINT_TYPE_BATCH || mintType == MINT_TYPE_MULTI, "MintType Invalid");
+        require(_mintType == MINT_TYPE_BATCH || _mintType == MINT_TYPE_MULTI, "MintType Invalid");
         mintType = _mintType;
         if (_mintType == MINT_TYPE_MULTI) {
             nftVault = address(0);
